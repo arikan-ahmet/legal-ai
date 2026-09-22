@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.llm import LLMService
@@ -34,6 +35,19 @@ async def health():
         "version": "0.1.0",
     }
 
+async def generate_response(history, llm_service):
+    answer = ""
+
+    async for chunk in llm_service.chat_stream(history):
+        answer += chunk
+        yield chunk
+
+    history.append(
+        {
+            "role": "assistant",
+            "content": answer,
+        }
+    )
 
 @app.post("/chat")
 async def chat(
@@ -52,16 +66,10 @@ async def chat(
     )
 
     try:
-        answer = await llm_service.chat(history)
-        history.append(
-            {
-                "role": "assistant",
-                "content": answer,
-            }
+        return StreamingResponse(
+            generate_response(history, llm_service),
+            media_type="text/plain",
         )
-        return {
-            "answer": answer
-        }
 
     except RuntimeError as error:
         raise HTTPException(
