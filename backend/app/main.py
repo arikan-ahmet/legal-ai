@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel
 
 from app.llm import LLMService
@@ -33,9 +33,19 @@ async def health():
 
 
 @app.post("/chat")
-async def chat(request: ChatRequest):
-    answer = llm_service.chat(request.message)
+async def chat(
+    request: ChatRequest,
+    llm_service: LLMService = Depends(LLMService),
+):
+    try:
+        answer = await llm_service.chat(request.message)
 
-    return {
-        "answer": answer
-    }
+        return {
+            "answer": answer
+        }
+
+    except RuntimeError as error:
+        raise HTTPException(
+            status_code=503,
+            detail=str(error),
+        )
