@@ -8,19 +8,14 @@ class LLMService:
         self.base_url = settings.ollama_base_url
         self.model = settings.ollama_model
 
-    async def chat(self, message: str) -> str:
+    async def chat(self, messages: list[dict]) -> str:
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
                     f"{self.base_url}/api/chat",
                     json={
                         "model": self.model,
-                        "messages": [
-                            {
-                                "role": "user",
-                                "content": message,
-                            }
-                        ],
+                        "messages": messages,
                         "stream": False,
                     },
                     timeout=120.0,

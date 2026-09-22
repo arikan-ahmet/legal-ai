@@ -9,13 +9,16 @@ app = FastAPI(
     description="Backend API for the Legal AI platform.",
     version="0.1.0",
 )
+conversations = {}
 
 
 llm_service = LLMService()
 
 
 class ChatRequest(BaseModel):
+    conversation_id: str
     message: str
+    
 
 
 @app.get("/")
@@ -37,9 +40,25 @@ async def chat(
     request: ChatRequest,
     llm_service: LLMService = Depends(LLMService),
 ):
-    try:
-        answer = await llm_service.chat(request.message)
+    if request.conversation_id not in conversations:
+        conversations[request.conversation_id] = []
 
+    history = conversations[request.conversation_id]
+    history.append(
+        {
+            "role": "user",
+            "content": request.message,
+        }
+    )
+
+    try:
+        answer = await llm_service.chat(history)
+        history.append(
+            {
+                "role": "assistant",
+                "content": answer,
+            }
+        )
         return {
             "answer": answer
         }
