@@ -1,10 +1,12 @@
 import httpx
 
+from app.config import settings
+
 
 class LLMService:
     def __init__(self):
-        self.base_url = "http://localhost:11434"
-        self.model = "qwen2.5:7b"
+        self.base_url = settings.ollama_base_url
+        self.model = settings.ollama_model
 
     async def chat(self, message: str) -> str:
         try:
@@ -35,3 +37,8 @@ class LLMService:
 
         except httpx.TimeoutException:
             raise RuntimeError("Ollama request timed out.")
+
+        except httpx.HTTPStatusError as error:
+            raise RuntimeError(
+                f"Ollama request failed with status {error.response.status_code}."
+            ) from error
