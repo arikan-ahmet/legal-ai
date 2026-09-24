@@ -11,6 +11,7 @@ class LLMService:
     async def chat(self, messages: list[dict]) -> str:
         try:
             async with httpx.AsyncClient() as client:
+                print("BEFORE HTTPX POST")
                 response = await client.post(
                     f"{self.base_url}/api/chat",
                     json={
@@ -20,6 +21,7 @@ class LLMService:
                     },
                     timeout=120.0,
                 )
+                print("AFTER HTTPX POST")
 
             response.raise_for_status()
 
